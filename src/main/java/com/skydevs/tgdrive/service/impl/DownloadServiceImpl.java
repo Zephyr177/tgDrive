@@ -32,6 +32,7 @@ import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 @Service
 @Slf4j
@@ -182,59 +183,159 @@ public class DownloadServiceImpl implements DownloadService {
      * @param outputStream
      */
     private void downloadAndMergeFileParts(List<String> partFileIds, OutputStream outputStream) {
-        int maxConcurrentDownloads = 3; // 最大并发下载数
+        // 根据CPU核心数调整并发下载数，但不超过6个线程
+        int availableProcessors = Runtime.getRuntime().availableProcessors();
+        int maxConcurrentDownloads = Math.min(Math.max(availableProcessors, 8), 32);
         ExecutorService executorService = Executors.newFixedThreadPool(maxConcurrentDownloads);
-
-        List<PipedInputStream> pipedInputStreams = new ArrayList<>(partFileIds.size());
-        CountDownLatch latch = new CountDownLatch(partFileIds.size());
-
+        
+        log.info("使用 {} 个线程并行下载分片", maxConcurrentDownloads);
+        
         try {
-            for (int i = 0; i < partFileIds.size(); i++) {
-                pipedInputStreams.add(new PipedInputStream());
-            }
-
+            // 使用临时文件来存储下载的分片，避免内存问题
+            Path tempDir = Files.createTempDirectory("tgdrive_download_");
+            List<Path> tempFiles = new ArrayList<>(partFileIds.size());
+            
+            // 并行下载所有分片到临时文件
+            CountDownLatch downloadLatch = new CountDownLatch(partFileIds.size());
             for (int i = 0; i < partFileIds.size(); i++) {
                 final int index = i;
                 final String partFileId = partFileIds.get(i);
-                final PipedInputStream pipedInputStream = pipedInputStreams.get(index);
-                final PipedOutputStream pipedOutputStream = new PipedOutputStream(pipedInputStream);
-
+                final Path tempFile = tempDir.resolve("part_" + index);
+                tempFiles.add(tempFile);
+                
                 executorService.submit(() -> {
-                    try (InputStream partInputStream = downloadFileByte(partFileId).byteStream();
-                         OutputStream pos = pipedOutputStream) {
-                        byte[] buffer = new byte[8192];
-                        int bytesRead;
-                        while ((bytesRead = partInputStream.read(buffer)) != -1) {
-                            pos.write(buffer, 0, bytesRead);
-                            pos.flush();
-                        }
-                    } catch (IOException e) {
-                        log.error("分片文件下载失败：{}", partFileId, e);
+                    try {
+                        log.info("开始下载第 {} 个分片文件 (ID: {})", index, partFileId);
+                        downloadPartToFile(partFileId, tempFile);
+                        log.info("分片 {} 下载完成", index);
+                    } catch (Exception e) {
+                        log.error("分片 {} 下载失败: {}", index, e.getMessage(), e);
                     } finally {
-                        latch.countDown();
+                        downloadLatch.countDown();
                     }
                 });
             }
-
-            for (int i = 0; i < partFileIds.size(); i++) {
-                try (InputStream pis = pipedInputStreams.get(i)) {
-                    byte[] buffer = new byte[8192];
+            
+            // 等待所有下载完成或超时
+            boolean allDownloaded = downloadLatch.await(30, TimeUnit.MINUTES);
+            if (!allDownloaded) {
+                log.warn("部分分片下载超时");
+            }
+            
+            // 按顺序将临时文件写入输出流
+            byte[] buffer = new byte[65536]; // 64KB
+            for (int i = 0; i < tempFiles.size(); i++) {
+                Path tempFile = tempFiles.get(i);
+                if (!Files.exists(tempFile)) {
+                    log.warn("分片 {} 的临时文件不存在，跳过", i);
+                    continue;
+                }
+                
+                try (InputStream fis = new BufferedInputStream(Files.newInputStream(tempFile), 131072)) { // 128KB buffer
                     int bytesRead;
-                    while ((bytesRead = pis.read(buffer)) != -1) {
-                        outputStream.write(buffer, 0, bytesRead);
-                        outputStream.flush();
+                    int totalBytesRead = 0;
+                    // 每50MB才flush一次
+                    int flushThreshold = 52428800;
+                    while ((bytesRead = fis.read(buffer)) != -1) {
+                        try {
+                            outputStream.write(buffer, 0, bytesRead);
+                            totalBytesRead += bytesRead;
+                            // 只在达到阈值时才flush，提高传输效率
+                            if (totalBytesRead >= flushThreshold) {
+                                outputStream.flush();
+                                totalBytesRead = 0;
+                            }
+                        } catch (IOException e) {
+                            if (isClientDisconnected(e)) {
+                                log.info("客户端已断开连接，停止合并分片");
+                                return;
+                            }
+                            throw e;
+                        }
                     }
                 } catch (IOException e) {
-                    handleClientAbortException(e);
+                    if (isClientDisconnected(e)) {
+                        log.info("客户端已断开连接，停止合并分片");
+                        return;
+                    }
+                    throw new RuntimeException("合并分片文件失败: " + e.getMessage(), e);
+                } finally {
+                    // 处理完后删除临时文件
+                    try {
+                        Files.deleteIfExists(tempFile);
+                    } catch (IOException e) {
+                        log.warn("无法删除临时文件: {}", tempFile, e);
+                    }
                 }
             }
-
-            latch.await();
+            
+            // 确保所有数据都写入
+            try {
+                outputStream.flush();
+            } catch (IOException e) {
+                if (!isClientDisconnected(e)) {
+                    throw new RuntimeException("最终flush失败: " + e.getMessage(), e);
+                }
+            }
+            
+            log.info("所有分片下载并合并完成");
+            
+            // 清理临时目录
+            try {
+                Files.deleteIfExists(tempDir);
+            } catch (IOException e) {
+                log.warn("无法删除临时目录: {}", tempDir, e);
+            }
         } catch (Exception e) {
-            log.error("文件下载终止：{}", e.getMessage(), e);
+            log.error("文件下载过程中发生错误", e);
+            throw new RuntimeException("文件下载终止: " + e.getMessage(), e);
         } finally {
             executorService.shutdown();
         }
+    }
+    
+    /**
+     * 下载分片文件到临时文件
+     * @param partFileId 分片文件ID
+     * @param tempFile 临时文件路径
+     * @throws IOException 下载失败时抛出
+     */
+    private void downloadPartToFile(String partFileId, Path tempFile) throws IOException {
+        // 使用专用的下载客户端
+        try (ResponseBody responseBody = downloadFileByte(partFileId);
+             BufferedInputStream bis = new BufferedInputStream(responseBody.byteStream(), 131072); // 128KB buffer
+             BufferedOutputStream fos = new BufferedOutputStream(Files.newOutputStream(tempFile), 131072)) {
+              
+            byte[] buffer = new byte[65536]; // 64KB
+            int bytesRead;
+            while ((bytesRead = bis.read(buffer)) != -1) {
+                fos.write(buffer, 0, bytesRead);
+            }
+            fos.flush();
+        }
+    }
+    
+    /**
+     * 检查是否为客户端断开连接的异常
+     * @param e IOException实例
+     * @return 如果是客户端断开连接返回true
+     */
+    private boolean isClientDisconnected(IOException e) {
+        if (e == null) return false;
+        
+        String message = e.getMessage();
+        if (message == null) return false;
+        
+        // 检查各种可能的客户端断开连接的错误信息
+        return message.contains("Broken pipe") 
+               || message.contains("Connection reset by peer")
+               || message.contains("你的主机中的软件中止了一个已建立的连接") 
+               || message.contains("Connection reset")
+               || message.contains("connection was aborted")
+               || message.contains("Pipe closed")
+               || (e.getCause() != null && e.getCause().getMessage() != null && 
+                   (e.getCause().getMessage().contains("Broken pipe") || 
+                    e.getCause().getMessage().contains("Connection reset")));
     }
 
     /**
@@ -242,9 +343,9 @@ public class DownloadServiceImpl implements DownloadService {
      * @param e
      */
     private void handleClientAbortException(IOException e) {
-        String message = e.getMessage();
-        if (message != null && (message.contains("An established connection was aborted") || message.contains("你的主机中的软件中止了一个已建立的连接"))) {
-            log.info("客户端中止了连接：{}", message);
+        if (isClientDisconnected(e)) {
+            log.info("客户端中止了连接");
+            // 不抛出异常，让程序正常结束
         } else {
             log.error("写入输出流时发生 IOException", e);
             throw new RuntimeException(e);
@@ -296,7 +397,9 @@ public class DownloadServiceImpl implements DownloadService {
                 .get()
                 .build();
 
-        Response response = okHttpClient.newCall(request).execute();
+        // 使用专用的下载客户端
+        OkHttpClient downloadClient = OkHttpClientFactory.createDownloadClient();
+        Response response = downloadClient.newCall(request).execute();
 
         if (!response.isSuccessful()) {
             log.error("无法下载文件，响应码：" + response.code());
@@ -309,7 +412,8 @@ public class DownloadServiceImpl implements DownloadService {
             throw new IOException("响应体为空");
         }
 
-        return responseBody.byteStream();
+        // 使用BufferedInputStream包装原始流以提高性能
+        return new BufferedInputStream(responseBody.byteStream(), 65536); // 64KB buffer
     }
 
     /**
@@ -351,6 +455,9 @@ public class DownloadServiceImpl implements DownloadService {
      * @throws IOException
      */
     private ResponseBody downloadFileByte(String partFileId) throws IOException {
+        // 使用专用的下载客户端
+        OkHttpClient downloadClient = OkHttpClientFactory.createDownloadClient();
+        
         File partFile = botService.getFile(partFileId);
         String partFileUrl = botService.getFullDownloadPath(partFile);
         Request partRequest = new Request.Builder()
@@ -358,19 +465,27 @@ public class DownloadServiceImpl implements DownloadService {
                 .get()
                 .build();
 
-        Response response = okHttpClient.newCall(partRequest).execute();
-        if (!response.isSuccessful()) {
-            log.error("无法下载分片文件，响应码：" + response.code());
-            throw new IOException("无法下载分片文件，响应码：" + response.code());
-        }
+        try {
+            Response response = downloadClient.newCall(partRequest).execute();
+            if (!response.isSuccessful()) {
+                log.error("无法下载分片文件，响应码：" + response.code());
+                throw new IOException("无法下载分片文件，响应码：" + response.code());
+            }
 
-        ResponseBody responseBody = response.body();
-        if (responseBody == null) {
-            log.error("分片响应体为空");
-            throw new IOException("分片响应体为空");
-        }
+            ResponseBody responseBody = response.body();
+            if (responseBody == null) {
+                log.error("分片响应体为空");
+                throw new IOException("分片响应体为空");
+            }
 
-        return responseBody;
+            return responseBody;
+        } catch (Exception e) {
+            log.error("下载分片文件时发生错误: {}", e.getMessage());
+            if (e instanceof IOException) {
+                throw (IOException) e;
+            }
+            throw new IOException("下载分片文件失败: " + e.getMessage(), e);
+        }
     }
 
     /**
