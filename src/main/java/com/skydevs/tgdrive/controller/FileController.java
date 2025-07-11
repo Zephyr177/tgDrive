@@ -1,7 +1,6 @@
 package com.skydevs.tgdrive.controller;
 
 import cn.dev33.satoken.annotation.SaCheckLogin;
-import com.skydevs.tgdrive.dto.Message;
 import com.skydevs.tgdrive.dto.UploadFile;
 import com.skydevs.tgdrive.result.PageResult;
 import com.skydevs.tgdrive.result.Result;
@@ -43,21 +42,7 @@ public class FileController {
         });
     }
 
-    /**
-     * 发送消息
-     *
-     * @param message
-     * @return
-     */
-    @PostMapping("/send-message")
-    public Result<String> sendMessage(@RequestBody Message message) {
-        log.info("处理消息发送");
-        if (botService.sendMessage(message.getMessage())) {
-            return Result.success("消息发送成功: " + message);
-        } else {
-            return Result.error("消息发送失败");
-        }
-    }
+
 
 
     /**

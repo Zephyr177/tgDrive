@@ -55,12 +55,6 @@ public class BotServiceImpl implements BotService {
     private final int PERMITS = 5;
     // tg bot接口限制20MB，传10MB是最佳实践
     private final int MAX_FILE_SIZE = 10 * 1024 * 1024;
-    /*
-    @Value("${server.port}")
-    private int serverPort;
-    private String url;
-     */
-
 
     /**
      * 设置基本配置
@@ -80,13 +74,6 @@ public class BotServiceImpl implements BotService {
             log.error("获取Bot Token失败: {}", e.getMessage());
             throw new GetBotTokenFailedException();
         }
-        /*
-        if (appConfig.getUrl() == null || appConfig.getUrl().isEmpty()) {
-            url = "http://localhost:" + serverPort;
-        } else {
-            url = appConfig.getUrl();
-        }
-         */
         bot = new TelegramBot(botToken);
     }
 
