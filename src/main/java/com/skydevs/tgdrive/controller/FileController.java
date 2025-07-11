@@ -7,8 +7,8 @@ import com.skydevs.tgdrive.result.Result;
 import com.skydevs.tgdrive.service.BotService;
 import com.skydevs.tgdrive.service.FileService;
 import jakarta.servlet.http.HttpServletRequest;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -18,12 +18,12 @@ import java.util.concurrent.CompletableFuture;
 @RestController
 @Slf4j
 @RequestMapping("/api")
+@RequiredArgsConstructor
 public class FileController {
 
-    @Autowired
-    private BotService botService;
-    @Autowired
-    private FileService fileService;
+    private final BotService botService;
+
+    private final FileService fileService;
 
 
     /**

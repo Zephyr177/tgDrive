@@ -22,9 +22,9 @@ import com.skydevs.tgdrive.service.ConfigService;
 import com.skydevs.tgdrive.utils.StringUtil;
 import com.skydevs.tgdrive.utils.UserFriendly;
 import jakarta.servlet.http.HttpServletRequest;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.Nullable;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -42,12 +42,11 @@ import java.util.concurrent.*;
 
 @Service
 @Slf4j
+@RequiredArgsConstructor
 public class BotServiceImpl implements BotService {
 
-    @Autowired
-    private ConfigService configService;
-    @Autowired
-    private FileMapper fileMapper;
+    private final ConfigService configService;
+    private final FileMapper fileMapper;
     private String botToken;
     private String chatId;
     private TelegramBot bot;

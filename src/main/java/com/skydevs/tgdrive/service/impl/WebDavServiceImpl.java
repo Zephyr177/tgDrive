@@ -7,8 +7,8 @@ import com.skydevs.tgdrive.service.WebDavService;
 import com.skydevs.tgdrive.utils.StringUtil;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -25,12 +25,11 @@ import static org.apache.catalina.manager.JspHelper.escapeXml;
 @Service
 @Slf4j
 @Transactional
+@RequiredArgsConstructor
 public class WebDavServiceImpl implements WebDavService {
 
-    @Autowired
-    private FileService fileService;
-    @Autowired
-    private FileMapper fileMapper;
+    private final FileService fileService;
+    private final FileMapper fileMapper;
 
     @Override
     public void switchMethod(HttpServletRequest request, HttpServletResponse response) throws IOException {
