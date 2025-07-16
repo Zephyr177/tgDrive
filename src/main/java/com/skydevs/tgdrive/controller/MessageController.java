@@ -10,6 +10,12 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+/**
+ * Description:
+ * 消息控制
+ * @author SkyDev
+ * @date 2025-07-11 17:51:06
+ */
 @RestController
 @Slf4j
 @RequestMapping("/api")
@@ -19,10 +25,11 @@ public class MessageController {
     private final BotService botService;
 
     /**
+     * Description:
      * 发送消息
-     *
-     * @param message
-     * @return
+     * @param message 消息内容
+     * @author SkyDev
+     * @date 2025-07-11 17:51:27
      */
     @PostMapping("/send-message")
     public Result<String> sendMessage(@RequestBody Message message) {

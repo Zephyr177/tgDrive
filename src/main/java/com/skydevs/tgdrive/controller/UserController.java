@@ -14,6 +14,12 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+/**
+ * Description:
+ * 用户控制类
+ * @author SkyDev
+ * @date 2025-07-11 17:52:21
+ */
 @RestController
 @Slf4j
 @RequestMapping("/api/auth")
@@ -22,9 +28,11 @@ public class UserController {
     private final UserService userService;
 
     /**
-     * 用户登入
+     * Description:
+     * 登入
      * @param authRequest 用户名、密码
-     * @return 登入状态
+     * @author SkyDev
+     * @date 2025-07-11 17:52:44
      */
     @PostMapping("/login")
     public Result<UserLogin> login(@RequestBody AuthRequest authRequest) {
@@ -43,9 +51,11 @@ public class UserController {
     }
 
     /**
+     * Description:
      * 修改密码
      * @param changePasswordRequest 修改密码请求
-     * @return
+     * @author SkyDev
+     * @date 2025-07-11 17:53:25
      */
     @PostMapping("change-password")
     public Result<String> changePassword(@RequestBody ChangePasswordRequest changePasswordRequest) {

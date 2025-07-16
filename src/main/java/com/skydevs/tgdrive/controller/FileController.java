@@ -15,6 +15,12 @@ import org.springframework.web.multipart.MultipartFile;
 import java.util.concurrent.CompletableFuture;
 
 
+/**
+ * Description:
+ * 文件管理
+ * @author SkyDev
+ * @date 2025-07-11 17:47:55
+ */
 @RestController
 @Slf4j
 @RequestMapping("/api")
@@ -27,10 +33,10 @@ public class FileController {
 
 
     /**
+     * Description:
      * 上传文件
-     *
-     * @param multipartFile
-     * @return
+     * @author SkyDev
+     * @date 2025-07-11 17:48:15
      */
     @PostMapping("/upload")
     public CompletableFuture<Result<UploadFile>> uploadFile(@RequestParam("file") MultipartFile multipartFile, HttpServletRequest request) {
@@ -42,14 +48,13 @@ public class FileController {
         });
     }
 
-
-
-
     /**
-     * 获取文件列表
-     * @param page
-     * @param size
-     * @return
+     * Description:
+     * 获取文件分页列表
+     * @param page 页数
+     * @param size 每页数量
+     * @author SkyDev
+     * @date 2025-07-11 17:48:41
      */
     @SaCheckLogin
     @GetMapping("/fileList")
@@ -59,8 +64,12 @@ public class FileController {
     }
 
     /**
-     * 更新文件url
-     * @return
+     * Description:
+     * 更新文件URL
+     * @param request 前端请求
+     * @return Result
+     * @author SkyDev
+     * @date 2025-07-11 17:50:08
      */
     @SaCheckLogin
     @PutMapping("/file-url")

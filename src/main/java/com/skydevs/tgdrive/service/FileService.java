@@ -10,47 +10,64 @@ import java.io.InputStream;
 import java.util.List;
 
 public interface FileService {
-    /**
-     * 分页查询文件列表
-     * @param page
-     * @param size
-     * @return
-     */
-    PageResult getFileList(int page, int size);
 
     /**
+     * Description:
+     * 获取文件分页
+     * @param pageNum 页码
+     * @param pageSize 每页显示数量
+     * @return FileInfos
+     * @author SkyDev
+     * @date 2025-07-14 10:14:57
+     */
+    PageResult<FileInfo> getFileList(int pageNum, int pageSize);
+
+    /**
+     * Description:
      * 更新文件url
-     * @return
+     * @param request 请求
+     * @author SkyDev
+     * @date 2025-07-14 10:16:51
      */
     void updateUrl(HttpServletRequest request);
 
     /**
-     * 上传文件到Telegram
-     *
+     * Description:
+     * 通过webdav上传文件
      * @param inputStream 文件输入流
-     * @param request
-     * @return 文件ID
+     * @param request 上传文件请求
+     * @return fileId
+     * @author SkyDev
+     * @date 2025-07-14 10:17:23
      */
     String uploadByWebDav(InputStream inputStream, HttpServletRequest request);
 
     /**
-     * WebDAV下载文件
-     * @param path 文件路径
-     * @return 文件流
+     * Description:
+     * 通过webdav下载
+     * @param path webdav路径
+     * @return ResponseEntity
+     * @author SkyDev
+     * @date 2025-07-14 10:18:54
      */
     ResponseEntity<StreamingResponseBody> downloadByWebDav(String path);
 
     /**
-     * 从Telegram删除文件
-     * @param path 文件路径
+     * Description:
+     * 通过webdav删除文件
+     * @param path webdav路径
+     * @author SkyDev
+     * @date 2025-07-14 10:19:48
      */
     void deleteByWebDav(String path);
 
     /**
-     * 获取文件列表
-     *
-     * @param path 路径
-     * @return 文件列表
+     * Description:
+     * 通过webdav路径获取文件
+     * @param path webdav路径
+     * @return FileInfos
+     * @author SkyDev
+     * @date 2025-07-14 10:20:27
      */
     List<FileInfo> listFiles(String path);
 }

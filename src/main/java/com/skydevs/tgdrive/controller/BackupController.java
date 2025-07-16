@@ -15,6 +15,12 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
 
+/**
+ * Description:
+ * 备份
+ * @author SkyDev
+ * @date 2025-07-11 16:57:59
+ */
 @RestController
 @RequestMapping("/api/backup")
 @Slf4j
@@ -25,6 +31,12 @@ public class BackupController {
 
     private final BackupService backupService;
 
+    /**
+     * Description: 备份数据库
+     *
+     * @author SkyDev
+     * @date 2025-07-11 16:59:06
+     */
     @GetMapping("/download")
     public ResponseEntity<Resource> downloadBackup(){
         File file = new File(DATABASE_PATH);
@@ -47,6 +59,12 @@ public class BackupController {
                 .body(resource);
     }
 
+    /**
+     * Description: 恢复数据库
+     *
+     * @author SkyDev
+     * @date 2025-07-11 16:59:31
+     */
     @PostMapping("/upload")
     public Result<String> uploadBackupDb(@RequestParam MultipartFile multipartFile) {
         try {

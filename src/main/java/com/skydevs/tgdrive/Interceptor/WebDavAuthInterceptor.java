@@ -4,8 +4,9 @@ import com.skydevs.tgdrive.entity.User;
 import com.skydevs.tgdrive.mapper.UserMapper;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 import org.springframework.util.DigestUtils;
 import org.springframework.web.servlet.HandlerInterceptor;
@@ -13,15 +14,30 @@ import org.springframework.web.servlet.HandlerInterceptor;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 
+/**
+ * Description:
+ * webdav权限校验
+ * @author SkyDev
+ * @date 2025-07-11 17:32:10
+ */
 @Component
 @Slf4j
+@RequiredArgsConstructor
 public class WebDavAuthInterceptor implements HandlerInterceptor {
 
-    @Autowired
-    private UserMapper userMapper;
-
+    private final UserMapper userMapper;
+    /**
+     * Description:
+     * 身份验证
+     * @param request 请求
+     * @param response 响应
+     * @param handler 处理
+     * @return boolean
+     * @author SkyDev
+     * @date 2025-07-11 17:32:31
+     */
     @Override
-    public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
+    public boolean preHandle(HttpServletRequest request, @NotNull HttpServletResponse response, @NotNull Object handler) throws Exception {
         // 读取 Authorization 头部信息
         String authHeader = request.getHeader("Authorization");
 

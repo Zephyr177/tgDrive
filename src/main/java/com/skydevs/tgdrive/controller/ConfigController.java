@@ -64,10 +64,12 @@ public class ConfigController {
     }
 
     /**
+     * Description:
      * 加载配置
-     *
      * @param filename 配置文件名
-     * @return
+     * @return String
+     * @author SkyDev
+     * @date 2025-07-11 17:00:25
      */
     @SaCheckLogin
     @GetMapping("/{filename}")

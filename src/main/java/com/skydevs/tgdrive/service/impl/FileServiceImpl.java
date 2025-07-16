@@ -25,6 +25,12 @@ import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Description:
+ * 文件相关逻辑
+ * @author SkyDev
+ * @date 2025-07-14 10:14:11
+ */
 @Service
 @Slf4j
 @RequiredArgsConstructor
@@ -34,29 +40,36 @@ public class FileServiceImpl implements FileService {
     private final DownloadService downloadService;
 
     /**
+     * Description:
      * 获取文件分页
-     * @param page
-     * @param size
-     * @return
+     * @param pageNum 页码
+     * @param pageSize 每页显示数量
+     * @return FileInfos
+     * @author SkyDev
+     * @date 2025-07-14 10:14:57
      */
     @Override
-    public PageResult getFileList(int page, int size) {
+    public PageResult<FileInfo> getFileList(int pageNum, int pageSize) {
         // 设置分页
-        PageHelper.startPage(page, size);
-        Page<FileInfo> pageInfo = fileMapper.getAllFiles();
-        List<FileInfo> fileInfos = new ArrayList<>();
-        for (FileInfo fileInfo : pageInfo) {
-            FileInfo fileInfo1 = new FileInfo();
-            BeanUtils.copyProperties(fileInfo, fileInfo1);
-            fileInfos.add(fileInfo1);
+        try (Page<Object> page = PageHelper.startPage(pageNum, pageSize)) {
+            Page<FileInfo> pageInfo = fileMapper.getAllFiles();
+            List<FileInfo> fileInfos = new ArrayList<>();
+            for (FileInfo fileInfo : pageInfo) {
+                FileInfo fileInfo1 = new FileInfo();
+                BeanUtils.copyProperties(fileInfo, fileInfo1);
+                fileInfos.add(fileInfo1);
+            }
+            log.info("文件分页查询");
+            return new PageResult<>((int) pageInfo.getTotal(), fileInfos);
         }
-        log.info("文件分页查询");
-        return new PageResult((int) pageInfo.getTotal(), fileInfos);
     }
 
     /**
+     * Description:
      * 更新文件url
-     * @return
+     * @param request 请求
+     * @author SkyDev
+     * @date 2025-07-14 10:16:51
      */
     @Override
     public void updateUrl(HttpServletRequest request) {
@@ -64,6 +77,15 @@ public class FileServiceImpl implements FileService {
         fileMapper.updateUrl(prefix);
     }
 
+    /**
+     * Description:
+     * 通过webdav上传文件
+     * @param inputStream 文件输入流
+     * @param request 上传文件请求
+     * @return fileId
+     * @author SkyDev
+     * @date 2025-07-14 10:17:23
+     */
     @Override
     public String uploadByWebDav(InputStream inputStream, HttpServletRequest request) {
         try {
@@ -118,9 +140,12 @@ public class FileServiceImpl implements FileService {
     }
 
     /**
-     * WebDAV下载
-     * @param path 文件路径
-     * @return
+     * Description:
+     * 通过webdav下载
+     * @param path webdav路径
+     * @return ResponseEntity
+     * @author SkyDev
+     * @date 2025-07-14 10:18:54
      */
     @Override
     public ResponseEntity<StreamingResponseBody> downloadByWebDav(String path) {
@@ -136,6 +161,13 @@ public class FileServiceImpl implements FileService {
         }
     }
 
+    /**
+     * Description:
+     * 通过webdav删除文件
+     * @param path webdav路径
+     * @author SkyDev
+     * @date 2025-07-14 10:19:48
+     */
     @Override
     public void deleteByWebDav(String path) {
         try {
@@ -147,10 +179,12 @@ public class FileServiceImpl implements FileService {
     }
 
     /**
-     * 列出WebDAV文件
-     *
-     * @param path 路径
-     * @return
+     * Description:
+     * 通过webdav路径获取文件
+     * @param path webdav路径
+     * @return FileInfos
+     * @author SkyDev
+     * @date 2025-07-14 10:20:27
      */
     @Override
     public List<FileInfo> listFiles(String path) {

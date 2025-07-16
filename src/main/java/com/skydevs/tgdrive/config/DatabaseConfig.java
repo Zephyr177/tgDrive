@@ -5,12 +5,24 @@ import org.springframework.context.annotation.Configuration;
 import javax.annotation.PostConstruct;
 import java.io.File;
 
+/**
+ * Description:
+ * 数据库配置
+ * @author SkyDev
+ * @date 2025-07-11 17:22:34
+ */
 @Configuration
 public class DatabaseConfig {
 
     @Value("${spring.datasource.url}")
     private String databaseUrl;
 
+    /**
+     * Description:
+     * 数据库初始化
+     * @author SkyDev
+     * @date 2025-07-11 17:22:48
+     */
     @PostConstruct
     public void init() {
         // 从数据库URL中提取路径

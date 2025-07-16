@@ -10,7 +10,9 @@ import java.util.List;
 @Slf4j
 public class StringUtil {
     /**
+     * Description:
      * 获取前缀
+     * @author SkyDev
      * @param request HTTP请求
      * @return 前缀
      */
@@ -35,7 +37,9 @@ public class StringUtil {
     }
 
     /**
+     * Description:
      * 获取相对路径
+     * @author SkyDev
      * @param path 路径
      * @return 相对路径
      */
@@ -44,7 +48,9 @@ public class StringUtil {
     }
 
     /**
+     * Description:
      * 获取纯文件名
+     * @author SkyDev
      * @param path 相对路径
      * @param dir 是否为文件夹
      * @return 文件名
@@ -60,7 +66,9 @@ public class StringUtil {
     }
 
     /**
+     * Description:
      * 获取路径中的文件夹名字
+     * @author SkyDev
      * @param path 路径
      * @return 文件夹名字数组
      */

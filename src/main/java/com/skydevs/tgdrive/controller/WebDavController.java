@@ -15,6 +15,12 @@ import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBo
 import java.io.IOException;
 import java.io.InputStream;
 
+/**
+ * Description:
+ * webdav核心业务
+ * @author SkyDev
+ * @date 2025-07-11 17:56:56
+ */
 @RestController
 @Slf4j
 @RequestMapping("/webdav")
@@ -26,9 +32,11 @@ public class WebDavController {
     private final WebDavService webDacService;
 
     /**
+     * Description:
      * 上传文件
-     * @param request
-     * @return
+     * @param request 前端请求
+     * @author SkyDev
+     * @date 2025-07-11 17:57:20
      */
     @PutMapping("/**")
     public Result<Void> handlePut(HttpServletRequest request) {
@@ -42,9 +50,11 @@ public class WebDavController {
     }
 
     /**
+     * Description:
      * 下载文件
-     * @param
-     * @return
+     * @param request 前端请求
+     * @author SkyDev
+     * @date 2025-07-11 17:58:12
      */
     @GetMapping("/**")
     public ResponseEntity<StreamingResponseBody> handleGet(HttpServletRequest request) {
@@ -52,10 +62,12 @@ public class WebDavController {
     }
 
     /**
+     * Description:
      * 删除文件
-     * @param request
-     * @param response
-     * @return
+     * @param request 前端请求
+     * @param response 后端响应
+     * @author SkyDev
+     * @date 2025-07-11 17:58:42
      */
     @DeleteMapping("/**")
     public Result<Void> handleDelete(HttpServletRequest request, HttpServletResponse response) {
@@ -69,8 +81,11 @@ public class WebDavController {
     }
 
     /**
+     * Description:
      * 处理探测请求
-     * @param response
+     * @param response 后端响应
+     * @author SkyDev
+     * @date 2025-07-11 17:59:20
      */
     @RequestMapping(value = "/**", method = RequestMethod.OPTIONS)
     public void handleOptions(HttpServletResponse response) {
@@ -80,15 +95,15 @@ public class WebDavController {
     }
 
     /**
+     * Description:
      * 处理特殊的webdav方法
-     * @param request
-     * @param response
-     * @throws IOException
+     * @param request 前端请求
+     * @param response 后端响应
+     * @author SkyDev
+     * @date 2025-07-11 18:00:02
      */
     @RequestMapping(value = "/dispatch/**", method = {RequestMethod.POST})
     public void handleWebDav(HttpServletRequest request, HttpServletResponse response) throws IOException {
         webDacService.switchMethod(request, response);
     }
-
-
 }
