@@ -5,14 +5,12 @@ import com.alibaba.fastjson.JSON;
 import com.pengrad.telegrambot.TelegramBot;
 import com.pengrad.telegrambot.model.File;
 import com.pengrad.telegrambot.model.Message;
-import com.pengrad.telegrambot.request.DeleteMessage;
 import com.pengrad.telegrambot.request.GetFile;
 import com.pengrad.telegrambot.request.SendDocument;
 import com.pengrad.telegrambot.request.SendMessage;
 import com.pengrad.telegrambot.response.GetFileResponse;
 import com.pengrad.telegrambot.response.SendResponse;
 import com.skydevs.tgdrive.dto.ConfigForm;
-import com.skydevs.tgdrive.dto.UploadFile;
 import com.skydevs.tgdrive.entity.BigFileInfo;
 import com.skydevs.tgdrive.entity.FileInfo;
 import com.skydevs.tgdrive.exception.*;
@@ -29,7 +27,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.*;
-import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -221,6 +218,7 @@ public class BotServiceImpl implements BotService {
         if (message == null) {
             return null;
         }
+        log.info("message_id:" + " " + message.messageId());
 
         // 按优先级检查可能的文件类型
         if (message.document() != null) {
@@ -263,27 +261,6 @@ public class BotServiceImpl implements BotService {
             log.error("文件上传失败 :" + e.getMessage());
             return null;
         }
-    }
-
-    /**
-     * 生成上传文件
-     *
-     * @param multipartFile
-     * @param request
-     * @return
-     */
-    @Override
-    public UploadFile getUploadFile(MultipartFile multipartFile, HttpServletRequest request) {
-        UploadFile uploadFile = new UploadFile();
-        if (!multipartFile.isEmpty()) {
-            String downloadUrl = uploadFile(multipartFile, request);
-            uploadFile.setFileName(multipartFile.getOriginalFilename());
-            uploadFile.setDownloadLink(downloadUrl);
-        } else {
-            uploadFile.setFileName("文件不存在");
-        }
-
-        return uploadFile;
     }
 
     /**
@@ -411,20 +388,6 @@ public class BotServiceImpl implements BotService {
     }
 
     /**
-     * 根据文件id获取文件名
-     *
-     * @param fileID
-     * @return
-     */
-    @Override
-    public String getFileNameByID(String fileID) {
-        GetFile getFile = new GetFile(fileID);
-        GetFileResponse getFileResponse = bot.execute(getFile);
-        File file = getFileResponse.file();
-        return file.filePath();
-    }
-
-    /**
      * 发送消息
      *
      * @param m
@@ -452,74 +415,27 @@ public class BotServiceImpl implements BotService {
         return botToken;
     }
 
-    /**
-     * 上传文件
-     * @param inputStream 文件输入流
-     * @param path 文件路径
-     * @return
-     */
     @Override
-    public String uploadFile(InputStream inputStream, String path) {
-        try {
-            String filename = path.substring(path.lastIndexOf('/') + 1);
-            long size = inputStream.available();
-
-            return getUploadedFileID(inputStream, filename, size);
-        } catch (IOException e) {
-            log.error("文件上传失败", e);
-            throw new RuntimeException("文件上传失败", e);
-        }
+    public TelegramBot getBot() {
+        return bot;
     }
 
-
     @Override
-    public String uploadFile(InputStream inputStream, String path, HttpServletRequest request) {
-        try {
-            String filename = path.substring(path.lastIndexOf('/') + 1);
-            long size = request.getContentLengthLong();
-
-            return getUploadedFileID(inputStream, filename, size);
-        } catch (IOException e) {
-            log.error("文件上传失败", e);
-            throw new RuntimeException("文件上传失败", e);
-        }
+    public String getChatId() {
+        return chatId;
     }
 
     @Nullable
     private String getUploadedFileID(InputStream inputStream, String filename, long size) throws IOException {
         if (size > MAX_FILE_SIZE) {
             List<String> fileIds = sendFileStreamInChunks(inputStream, filename);
-            String fileID = createRecordFile(filename, size, fileIds);
-            return fileID;
+            return createRecordFile(filename, size, fileIds);
         } else {
             String uploadFilename = filename;
             if (filename.endsWith(".gif")) {
                 uploadFilename = filename.substring(0, filename.lastIndexOf(".gif"));
             }
             return uploadOneFile(inputStream, uploadFilename);
-        }
-    }
-
-    @Override
-    public InputStream downloadFile(String fileId) {
-        try {
-            File file = getFile(fileId);
-            String fileUrl = bot.getFullFilePath(file);
-            return new URL(fileUrl).openStream();
-        } catch (IOException e) {
-            log.error("文件下载失败", e);
-            throw new RuntimeException("文件下载失败", e);
-        }
-    }
-
-    @Override
-    public void deleteFile(String fileId) {
-        try {
-            bot.execute(new DeleteMessage(chatId, Integer.parseInt(fileId)));
-            log.info("文件删除成功，File ID: {}", fileId);
-        } catch (Exception e) {
-            log.error("文件删除失败", e);
-            throw new RuntimeException("文件删除失败", e);
         }
     }
 }

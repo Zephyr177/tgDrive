@@ -1,9 +1,12 @@
 package com.skydevs.tgdrive.service;
 
+import com.pengrad.telegrambot.TelegramBot;
+import com.skydevs.tgdrive.dto.UploadFile;
 import com.skydevs.tgdrive.entity.FileInfo;
 import com.skydevs.tgdrive.result.PageResult;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 
 import java.io.InputStream;
@@ -33,6 +36,25 @@ public interface FileService {
 
     /**
      * Description:
+     * 上传文件
+     * @author SkyDev
+     * @param multipartFile 文件
+     * @param request 上传文件请求
+     * @date 2025-07-16 16:33:39
+     */
+    UploadFile getUploadFile(MultipartFile multipartFile, HttpServletRequest request, String chatId, TelegramBot bot);
+
+    /**
+     * Description:
+     * 从Telegram删除文件
+     * @author SkyDev
+     * @param fileId 文件ID
+     * @date 2025-07-16 16:39:44
+     */
+    void deleteFile(String fileId);
+
+    /**
+     * Description:
      * 通过webdav上传文件
      * @param inputStream 文件输入流
      * @param request 上传文件请求
@@ -40,7 +62,7 @@ public interface FileService {
      * @author SkyDev
      * @date 2025-07-14 10:17:23
      */
-    String uploadByWebDav(InputStream inputStream, HttpServletRequest request);
+    String uploadByWebDav(InputStream inputStream, HttpServletRequest request, String chatId, TelegramBot bot);
 
     /**
      * Description:

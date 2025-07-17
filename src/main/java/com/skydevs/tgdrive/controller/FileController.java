@@ -2,6 +2,7 @@ package com.skydevs.tgdrive.controller;
 
 import cn.dev33.satoken.annotation.SaCheckLogin;
 import com.skydevs.tgdrive.dto.UploadFile;
+import com.skydevs.tgdrive.entity.FileInfo;
 import com.skydevs.tgdrive.result.PageResult;
 import com.skydevs.tgdrive.result.Result;
 import com.skydevs.tgdrive.service.BotService;
@@ -44,7 +45,7 @@ public class FileController {
             if (multipartFile == null || multipartFile.isEmpty()) {
                 return Result.error("上传的文件为空");
             }
-            return Result.success(botService.getUploadFile(multipartFile, request));
+            return Result.success(fileService.getUploadFile(multipartFile, request, botService.getChatId(), botService.getBot()));
         });
     }
 
@@ -58,8 +59,8 @@ public class FileController {
      */
     @SaCheckLogin
     @GetMapping("/fileList")
-    public Result<PageResult> getFileList(@RequestParam int page, @RequestParam int size) {
-        PageResult pageResult = fileService.getFileList(page, size);
+    public Result<PageResult<FileInfo>> getFileList(@RequestParam int page, @RequestParam int size) {
+        PageResult<FileInfo> pageResult = fileService.getFileList(page, size);
         return Result.success(pageResult);
     }
 
@@ -73,7 +74,7 @@ public class FileController {
      */
     @SaCheckLogin
     @PutMapping("/file-url")
-    public Result updateFileUrl(HttpServletRequest request) {
+    public Result<Void> updateFileUrl(HttpServletRequest request) {
         log.info("更新文件url");
         fileService.updateUrl(request);
         return Result.success();

@@ -1,6 +1,7 @@
 package com.skydevs.tgdrive.controller;
 
 import com.skydevs.tgdrive.result.Result;
+import com.skydevs.tgdrive.service.BotService;
 import com.skydevs.tgdrive.service.FileService;
 import com.skydevs.tgdrive.service.WebDavService;
 import com.skydevs.tgdrive.utils.StringUtil;
@@ -29,6 +30,8 @@ public class WebDavController {
 
     private final FileService fileService;
 
+    private final BotService botService;
+
     private final WebDavService webDacService;
 
     /**
@@ -41,7 +44,7 @@ public class WebDavController {
     @PutMapping("/**")
     public Result<Void> handlePut(HttpServletRequest request) {
         try (InputStream inputStream = request.getInputStream()) {
-            fileService.uploadByWebDav(inputStream, request);
+            fileService.uploadByWebDav(inputStream, request, botService.getChatId(), botService.getBot());
             return Result.success();
         } catch (Exception e) {
             log.error("文件上传失败", e);
