@@ -48,10 +48,10 @@ public interface FileService {
      * Description:
      * 从Telegram删除文件
      * @author SkyDev
-     * @param fileId 文件ID
+     * @param fileIds 需要删除的文件ID
      * @date 2025-07-16 16:39:44
      */
-    void deleteFile(String fileId);
+    void deleteFiles(List<String> fileIds);
 
     /**
      * Description:

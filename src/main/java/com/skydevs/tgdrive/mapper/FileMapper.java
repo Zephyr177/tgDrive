@@ -112,4 +112,13 @@ public interface FileMapper {
      */
     @Insert("INSERT INTO files (file_name, download_url, upload_time, file_id, size, full_size, webdav_path, dir) VALUES (#{file.fileName}, #{file.downloadUrl}, #{file.uploadTime}, #{file.fileId}, #{file.size}, #{file.fullSize}, #{target}, #{file.dir})")
     void moveFile(@Param("file") FileInfo sourceFile, @Param("target") String target);
+
+    /**
+     * Description:
+     * 批量删除文件
+     * @param fileIds 需要批量删除的文件id列表
+     * @author SkyDev
+     * @date 2025-07-18 16:06:06
+     */
+    int deleteFilesByIds(@Param("fileIds") List<String> fileIds);
 }

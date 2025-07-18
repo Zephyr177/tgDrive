@@ -13,6 +13,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
 
@@ -47,6 +48,24 @@ public class FileController {
             }
             return Result.success(fileService.getUploadFile(multipartFile, request, botService.getChatId(), botService.getBot()));
         });
+    }
+
+    /**
+     * Description:
+     * 根据文件列表删除文件
+     * @param fileIds 需要删除的文件列表
+     * @author SkyDev
+     * @date 2025-07-18 15:57:06
+     */
+    @SaCheckLogin
+    @DeleteMapping("/files")
+    public Result<Void> deleteFile(@RequestBody List<String> fileIds) {
+        if (fileIds == null || fileIds.isEmpty()) {
+            return Result.error("文件列表不能为空");
+        }
+        fileService.deleteFiles(fileIds);
+        log.info("成功删除文件：{}", fileIds);
+        return Result.success();
     }
 
     /**

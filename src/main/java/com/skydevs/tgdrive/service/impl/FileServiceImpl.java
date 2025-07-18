@@ -134,8 +134,8 @@ public class FileServiceImpl implements FileService {
     }
 
     @Override
-    public void deleteFile(String fileId) {
-        
+    public void deleteFiles(List<String > fileIds) {
+        fileMapper.deleteFilesByIds(fileIds);
     }
 
     /**
@@ -366,7 +366,7 @@ public class FileServiceImpl implements FileService {
 
             } catch (NullPointerException e) {
                 log.error("Bot未设置或其他空指针异常", e);
-                throw new BotNotSetException("上传过程中发生空指针异常");
+                throw new BotNotSetException("Bot未设置或其他空指针异常");
             } catch (InterruptedException e) {
                 log.error("线程被中断", e);
                 Thread.currentThread().interrupt(); // 重置中断状态
