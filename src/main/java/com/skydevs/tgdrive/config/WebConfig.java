@@ -1,31 +1,25 @@
 package com.skydevs.tgdrive.config;
 
 import com.skydevs.tgdrive.Interceptor.WebDavAuthInterceptor;
-import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
+import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
-/**
- * Description:
- * web配置
- * @author SkyDev
- * @date 2025-07-11 17:23:25
- */
+import java.nio.file.Paths;
+
 @Configuration
-@RequiredArgsConstructor
 public class WebConfig implements WebMvcConfigurer {
 
-    private final WebDavAuthInterceptor webDavAuthInterceptor;
+    @Autowired
+    private WebDavAuthInterceptor webDavAuthInterceptor;
+    
+    @Value("${app.upload.path:uploads}")
+    private String uploadPath;
 
-    /**
-     * Description:
-     * 添加跨域配置
-     * @param registry 跨域配置注册器
-     * @author SkyDev
-     * @date 2025-07-11 17:24:58
-     */
     @Override
     public void addCorsMappings(CorsRegistry registry) {
         registry.addMapping("/api/**")
@@ -35,14 +29,22 @@ public class WebConfig implements WebMvcConfigurer {
                 .allowCredentials(false);
     }
 
-    /**
-     * Description:
-     * webdav拦截
-     * @author SkyDev
-     * @date 2025-07-11 17:26:17
-     */
+    @Override
     public void addInterceptors(InterceptorRegistry registry) {
         registry.addInterceptor(webDavAuthInterceptor)
                 .addPathPatterns("/webdav/**");
+    }
+    
+    @Override
+    public void addResourceHandlers(ResourceHandlerRegistry registry) {
+        // 配置上传文件的访问路径
+        String absoluteUploadPath = Paths.get(uploadPath).toAbsolutePath().toString();
+        
+        registry.addResourceHandler("/uploads/**")
+                .addResourceLocations("file:" + absoluteUploadPath + "/");
+        
+        // 保持原有的静态资源配置
+        registry.addResourceHandler("/**")
+                .addResourceLocations("classpath:/static/");
     }
 }
