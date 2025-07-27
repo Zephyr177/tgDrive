@@ -1,7 +1,5 @@
 # tgDrive - 无限容量和速度的网盘
 
-<div align="center">
-
 ![GitHub release (latest by date)](https://img.shields.io/github/v/release/SkyDependence/tgDrive)
 ![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/SkyDependence/tgDrive/docker-publish.yml)
 ![Docker Image Size](https://img.shields.io/docker/image-size/nanyangzesi/tgdrive/latest)
@@ -11,24 +9,10 @@
 ![GitHub license](https://img.shields.io/github/license/SkyDependence/tgDrive)
 [![tg-qun](https://img.shields.io/static/v1?label=TG%E7%BE%A4&amp;message=TgDrive&amp;color=blue)](https://t.me/+nhHtap9IYbVhOTM1)
 
-</div>
-
-## 项目说明
-
-**原始项目作者**：[SkyDev](https://github.com/SkyDependence)  
-**原始项目地址**：[https://github.com/SkyDependence/tgDrive](https://github.com/SkyDependence/tgDrive)
-
-> **致谢**：感谢 SkyDev 作为 tgDrive 项目的原始开创者，为我们提供了这个优秀的基础框架。本版本在原项目基础上进行了以下优化：
-> 
-> - ✨ **文件管理优化**：改进了文件上传、下载和管理体验
-> - 🐛 **Bug修复**：解决了原版本中的一些已知问题
-> - 🚀 **上传体验提升**：优化了文件上传进度显示和用户交互
-> - 🔧 **配置管理增强**：新增配置删除功能，提升配置管理便利性
-> - 📱 **界面优化**：改进了用户界面和操作流程
-
 **tgDrive** 是一款使用 Java 开发的基于 Telegram Bot 的网盘应用，支持不限容量和速度的文件存储。通过多线程技术和优化的传输策略，为用户提供高效、可靠的云存储解决方案。
 
 ## 目录
+
 
 - [功能特点](#功能特点)
 - [快速开始](#快速开始)
