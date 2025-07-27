@@ -51,8 +51,9 @@
 
 ### 在线体验
 
-- [Render 部署站点（推荐）](https://render.skydevs.link)
+- [Render 部署站点](https://render.skydevs.link)
 - [演示站点](https://server.skydevs.link)
+- [Stanley维护的站点（推荐）](tgdrive.cfd)
 
 ### 相关资源
 
