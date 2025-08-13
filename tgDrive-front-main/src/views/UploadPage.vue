@@ -51,36 +51,11 @@
           <!-- Progress Section -->
           <el-collapse-transition>
             <div v-if="uploadProgress.length > 0" class="progress-section">
-              <div v-for="file in uploadProgress" :key="file.uid" class="file-progress-item">
-                <span class="file-name">{{ file.name }}</span>
-                <el-progress
-                  :percentage="Math.round(file.percentage * 100) / 100"
-                  :status="file.status"
-                  :stroke-width="8"
-                  striped
-                  :striped-flow="file.status !== 'success' && file.status !== 'exception'"
-                />
-                <div class="file-size-info">
-                  {{ formatFileSize(file.loaded) }} / {{ formatFileSize(file.total) }}
-                </div>
-                <!-- 服务器到Telegram进度 -->
-                <div v-if="file.serverToTelegram.status === 'uploading' || file.serverToTelegram.status === 'completed'" class="telegram-info">
-                  <div class="telegram-progress-text">
-                    <span v-if="file.serverToTelegram.status === 'completed'">✅ 已传输到Telegram</span>
-                    <span v-else>
-                      传输到Telegram: {{ file.serverToTelegram.currentChunk || 0 }}/{{ file.serverToTelegram.totalChunks || 0 }} 片
-                      ({{ Math.round(file.serverToTelegram.percentage * 100) / 100 }}%)
-                    </span>
-                  </div>
-                  <el-progress
-                    :percentage="Math.round(file.serverToTelegram.percentage * 100) / 100"
-                    :status="file.serverToTelegram.status === 'completed' ? 'success' : file.status"
-                    :stroke-width="8"
-                    striped
-                    :striped-flow="file.serverToTelegram.status !== 'completed' && file.status !== 'exception'"
-                  />
-                </div>
-              </div>
+              <UploadProgressItem
+                v-for="item in uploadProgress"
+                :key="item.uid"
+                :item="item"
+              />
             </div>
           </el-collapse-transition>
         </el-card>
@@ -137,12 +112,14 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed, onMounted, onBeforeUnmount } from 'vue';
+import { ref, computed, onMounted, onBeforeUnmount, reactive } from 'vue';
 import { useRouter } from 'vue-router';
 import axios from 'axios';
 import { ElMessage, UploadFile, UploadFiles, UploadRawFile, UploadInstance } from 'element-plus';
 import { UploadFilled, Upload, Document, Link, Tickets, Paperclip, View } from '@element-plus/icons-vue';
+import UploadProgressItem from '@/components/UploadProgressItem.vue';
 
+// --- Interfaces ---
 interface UploadedFile {
   fileName: string;
   downloadLink: string;
@@ -152,34 +129,34 @@ interface UploadedFile {
 interface ProgressItem {
   uid: number;
   name: string;
-  percentage: number;
-  status: 'success' | 'exception' | undefined;
-  loaded: number;
   total: number;
-  // 服务器到Telegram的进度
-  serverToTelegram: {
+  client: {
+    percentage: number;
+    loaded: number;
+    status: 'uploading' | 'success' | 'exception';
+  };
+  server: {
     percentage: number;
     currentChunk: number;
     totalChunks: number;
-    status: 'waiting' | 'uploading' | 'completed' | 'error';
+    status: 'waiting' | 'uploading' | 'success' | 'exception';
   };
 }
 
+// --- Component State ---
 const router = useRouter();
 const uploadRef = ref<UploadInstance>();
-
 const selectedFiles = ref<UploadFile[]>([]);
 const uploadedFiles = ref<UploadedFile[]>([]);
 const isUploading = ref(false);
 const uploadProgress = ref<ProgressItem[]>([]);
 const websocket = ref<WebSocket | null>(null);
 
-const uploadCompletedCount = computed(() => 
-  uploadProgress.value.filter(p => p.status === 'success').length
+const uploadCompletedCount = computed(() =>
+  uploadProgress.value.filter(p => p.server.status === 'success').length
 );
 
-
-
+// --- Methods ---
 const handleFileChange = (file: UploadFile, fileList: UploadFiles) => {
   selectedFiles.value = fileList;
 };
@@ -188,6 +165,7 @@ const handleFileRemove = (file: UploadFile, fileList: UploadFiles) => {
   selectedFiles.value = fileList;
 };
 
+// Corrected: Using a sequential for...of loop for robust, one-by-one uploads.
 const handleUpload = async () => {
   if (selectedFiles.value.length === 0) {
     ElMessage.warning('请先选择文件');
@@ -195,59 +173,43 @@ const handleUpload = async () => {
   }
 
   isUploading.value = true;
-  uploadedFiles.value = []; // Clear previous results
-  uploadProgress.value = selectedFiles.value.map(f => ({
+  uploadedFiles.value = [];
+  uploadProgress.value = selectedFiles.value.map(f => reactive({
     uid: f.uid,
     name: f.name,
-    percentage: 0,
-    status: undefined,
-    loaded: 0,
     total: f.size || 0,
-    serverToTelegram: {
-      percentage: 0,
-      currentChunk: 0,
-      totalChunks: 0,
-      status: 'waiting' as const
-    }
+    client: { percentage: 0, loaded: 0, status: 'uploading' },
+    server: { percentage: 0, currentChunk: 0, totalChunks: 0, status: 'waiting' },
   }));
 
   for (const file of selectedFiles.value) {
     const progressItem = uploadProgress.value.find(p => p.uid === file.uid);
     if (!progressItem) continue;
 
-    const rawFile = file.raw as File;
-    
     try {
-      // 使用普通上传
       const formData = new FormData();
-      formData.append('file', rawFile);
+      formData.append('file', file.raw as File);
 
       const response = await axios.post('/api/upload', formData, {
-        timeout: 21600000, // 6小时超时
+        timeout: 21600000,
         onUploadProgress: (progressEvent) => {
           if (progressEvent.total) {
-            progressItem.loaded = progressEvent.loaded;
-            progressItem.total = progressEvent.total;
-            const uploadPercentage = Math.round((progressEvent.loaded / progressEvent.total) * 10000) / 100;
-            progressItem.percentage = uploadPercentage;
+            progressItem.client.loaded = progressEvent.loaded;
+            progressItem.client.percentage = (progressEvent.loaded / progressEvent.total) * 100;
           }
         }
       });
 
       const { code, msg, data } = response.data;
       if (code === 1) {
-        // 上传完成，开始服务器到Telegram阶段
-        progressItem.serverToTelegram.status = 'uploading';
+        progressItem.client.status = 'success';
         uploadedFiles.value.push(data);
-        // 不在这里显示消息，等待WebSocket的upload_complete消息
       } else {
-        progressItem.status = 'exception';
-        ElMessage.error(`${file.name} 上传失败: ${msg || '未知错误'}`);
+        throw new Error(msg || '上传响应错误');
       }
     } catch (error: any) {
-      progressItem.status = 'exception';
-      const errorMsg = error.response?.data?.msg || error.message || '网络错误';
-      ElMessage.error(`${file.name} 上传失败: ${errorMsg}`);
+      progressItem.client.status = 'exception';
+      ElMessage.error(`${file.name} 上传失败: ${error.message}`);
     }
   }
 
@@ -256,66 +218,48 @@ const handleUpload = async () => {
   uploadRef.value?.clearFiles();
 };
 
-const goToFileList = () => {
-  router.push('/fileList');
-};
+const connectWebSocket = () => {
+  const wsUrl = `ws://${window.location.host}/ws/upload-progress`;
+  websocket.value = new WebSocket(wsUrl);
 
-const copyToClipboard = (text: string, message: string) => {
-  // 优先使用现代的 Clipboard API
-  if (navigator.clipboard && window.isSecureContext) {
-    navigator.clipboard.writeText(text).then(() => {
-      ElMessage.success(message);
-    }).catch(err => {
-      console.error('Clipboard API failed:', err);
-      fallbackCopyTextToClipboard(text, message);
-    });
-  } else {
-    // 降级到传统方法
-    fallbackCopyTextToClipboard(text, message);
-  }
-};
+  websocket.value.onmessage = (event) => {
+    try {
+      const data = JSON.parse(event.data);
+      const progressItem = uploadProgress.value.find(p => p.name === data.fileName);
+      if (!progressItem) return;
 
-// 传统的复制方法作为降级方案
-const fallbackCopyTextToClipboard = (text: string, message: string) => {
-  const textArea = document.createElement('textarea');
-  textArea.value = text;
-  
-  // 避免滚动到底部
-  textArea.style.top = '0';
-  textArea.style.left = '0';
-  textArea.style.position = 'fixed';
-  textArea.style.opacity = '0';
-  
-  document.body.appendChild(textArea);
-  textArea.focus();
-  textArea.select();
-  
-  try {
-    const successful = document.execCommand('copy');
-    if (successful) {
-      ElMessage.success(message);
-    } else {
-      ElMessage.error('复制失败，请手动复制');
+      if (data.type === 'upload_progress') {
+        progressItem.server.status = 'uploading';
+        const totalChunks = data.total_chunks || data.totalChunks;
+        const currentChunk = data.current_chunk || data.currentChunk;
+        if (totalChunks !== undefined) progressItem.server.totalChunks = totalChunks;
+        if (currentChunk !== undefined) progressItem.server.currentChunk = currentChunk;
+        if (data.percentage !== undefined) progressItem.server.percentage = data.percentage;
+      } else if (data.type === 'upload_complete') {
+        progressItem.server.status = 'success';
+        progressItem.server.percentage = 100;
+      } else if (data.type === 'upload_error') {
+        progressItem.server.status = 'exception';
+        ElMessage.error(`${data.fileName} 传输到Telegram失败: ${data.error}`);
+      }
+    } catch (error) {
+      console.error('WebSocket message parse error:', error);
     }
-  } catch (err) {
-    console.error('Fallback copy failed:', err);
-    ElMessage.error('复制失败，请手动复制');
-  }
-  
-  document.body.removeChild(textArea);
+  };
+
+  websocket.value.onerror = (error) => {
+    console.error('WebSocket error:', error);
+  };
 };
 
-const copyMarkdown = (file: UploadedFile) => {
-  copyToClipboard(`[${file.fileName}](${file.downloadLink})`, 'Markdown 格式已复制');
+// --- Utility and Lifecycle ---
+const goToFileList = () => router.push('/fileList');
+const copyToClipboard = (text: string, message: string) => {
+  navigator.clipboard.writeText(text).then(() => ElMessage.success(message));
 };
-
-const copyLink = (file: UploadedFile) => {
-  copyToClipboard(file.downloadLink, '下载链接已复制');
-};
-
-const openLink = (url: string) => {
-  window.open(url, '_blank');
-};
+const copyMarkdown = (file: UploadedFile) => copyToClipboard(`[${file.fileName}](${file.downloadLink})`, 'Markdown 格式已复制');
+const copyLink = (file: UploadedFile) => copyToClipboard(file.downloadLink, '下载链接已复制');
+const openLink = (url: string) => window.open(url, '_blank');
 
 const batchCopyMarkdown = () => {
   const text = uploadedFiles.value.map(f => `[${f.fileName}](${f.downloadLink})`).join('\n');
@@ -327,103 +271,26 @@ const batchCopyLinks = () => {
   copyToClipboard(text, `已批量复制 ${uploadedFiles.value.length} 个下载链接`);
 };
 
-const formatFileSize = (bytes: number): string => {
-  if (bytes === 0) return '0 B';
-  const k = 1024;
-  const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
-  const i = Math.floor(Math.log(bytes) / Math.log(k));
-  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-};
-
 const handlePaste = (event: ClipboardEvent) => {
   const items = event.clipboardData?.items;
   if (!items) return;
-
+  const files: File[] = [];
   for (let i = 0; i < items.length; i++) {
     if (items[i].kind === 'file') {
       const file = items[i].getAsFile();
-      if (file) {
-        const uid = Date.now() + i;
-        const uploadFile: UploadFile = {
-          name: file.name,
-          size: file.size,
-          uid: uid,
-          raw: Object.assign(file, { uid }) as UploadRawFile,
-          status: 'ready',
-        };
-        
-        const isDuplicate = selectedFiles.value.some(f => f.name === uploadFile.name && f.size === uploadFile.size);
-        if (!isDuplicate) {
-          selectedFiles.value.push(uploadFile);
-        }
-      }
+      if (file) files.push(file);
     }
   }
-  if (selectedFiles.value.length > 0) {
-    ElMessage.success('已通过粘贴添加文件');
-  }
-};
-
-const connectWebSocket = () => {
-  const wsUrl = `ws://${window.location.host}/ws/upload-progress`;
-  websocket.value = new WebSocket(wsUrl);
-  
-  websocket.value.onmessage = (event) => {
-     try {
-       const data = JSON.parse(event.data);
-       console.log('WebSocket received:', data);
-       
-       if (data.type === 'upload_progress') {
-         const progressItem = uploadProgress.value.find(p => p.name === data.fileName);
-         // 更新服务器到Telegram的进度
-         if (progressItem && progressItem.serverToTelegram.status !== 'completed') {
-           // 确保服务器到Telegram阶段已开始
-           if (progressItem.serverToTelegram.status === 'waiting') {
-             progressItem.serverToTelegram.status = 'uploading';
-           }
-           progressItem.serverToTelegram.percentage = Math.round(data.percentage * 100) / 100;
-           if (data.currentChunk !== undefined) {
-             progressItem.serverToTelegram.currentChunk = data.currentChunk;
-           }
-           if (data.totalChunks !== undefined) {
-             progressItem.serverToTelegram.totalChunks = data.totalChunks;
-           }
-           // 直接使用Telegram进度作为整体进度
-           progressItem.percentage = Math.round(data.percentage * 100) / 100;
-           console.log(`更新${data.fileName}的Telegram进度: ${data.percentage}%`);
-         }
-       } else if (data.type === 'upload_complete') {
-         const progressItem = uploadProgress.value.find(p => p.name === data.fileName);
-         if (progressItem) {
-           // 服务器到Telegram阶段完成
-           progressItem.serverToTelegram.status = 'completed';
-           progressItem.serverToTelegram.percentage = 100;
-           progressItem.status = 'success';
-           progressItem.percentage = 100;
-           ElMessage.success(`${data.fileName} 完全上传完成`);
-         }
-       } else if (data.type === 'upload_error') {
-         const progressItem = uploadProgress.value.find(p => p.name === data.fileName);
-         if (progressItem) {
-           progressItem.status = 'exception';
-           progressItem.serverToTelegram.status = 'error';
-         }
-         ElMessage.error(`${data.fileName} 传输到Telegram失败: ${data.error}`);
-       }
-     } catch (error) {
-       console.error('WebSocket message parse error:', error);
-     }
-   };
-  
-  websocket.value.onerror = (error) => {
-    console.error('WebSocket error:', error);
-  };
-};
-
-const disconnectWebSocket = () => {
-  if (websocket.value) {
-    websocket.value.close();
-    websocket.value = null;
+  if (files.length > 0) {
+    const uploadFiles = files.map((file, i) => {
+      const uid = Date.now() + i;
+      return { name: file.name, size: file.size, uid, raw: Object.assign(file, { uid }), status: 'ready' } as UploadFile;
+    });
+    const newFiles = uploadFiles.filter(uf => !selectedFiles.value.some(sf => sf.name === uf.name && sf.size === uf.size));
+    if (newFiles.length > 0) {
+      selectedFiles.value.push(...newFiles);
+      ElMessage.success(`已通过粘贴添加 ${newFiles.length} 个文件`);
+    }
   }
 };
 
@@ -434,9 +301,15 @@ onMounted(() => {
 
 onBeforeUnmount(() => {
   window.removeEventListener('paste', handlePaste);
-  disconnectWebSocket();
+  if (websocket.value) {
+    websocket.value.close();
+  }
 });
 </script>
+
+
+
+
 
 <style scoped>
 .page-container {
@@ -482,6 +355,13 @@ onBeforeUnmount(() => {
   box-sizing: border-box;
 }
 
+.progress-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+}
+
 .file-name {
   font-size: 14px;
   font-weight: 500;
@@ -489,17 +369,28 @@ onBeforeUnmount(() => {
   overflow: hidden;
   text-overflow: ellipsis;
   color: var(--el-text-color-primary);
-}
-
-.el-progress {
-  width: 100%;
+  flex-grow: 1;
 }
 
 .file-size-info {
   font-size: 12px;
   color: var(--el-text-color-secondary);
+  flex-shrink: 0;
+}
+
+.unified-progress-bar {
+  margin: 4px 0;
+}
+
+.progress-info-text {
+  font-size: 12px;
+  color: var(--el-text-color-regular);
   text-align: center;
-  margin-top: 4px;
+  height: 16px;
+}
+
+.el-progress {
+  width: 100%;
 }
 
 .chunk-progress-info {

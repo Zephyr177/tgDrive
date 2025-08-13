@@ -17,16 +17,16 @@ DROP TABLE IF EXISTS users;
 -- 重命名新表
 ALTER TABLE users_new RENAME TO users;
 
--- 确保admin和visitor账户存在且密码正确
--- admin密码: 123456 (MD5: e10adc3949ba59abbe56e057f20f883e)
--- visitor密码: hello (MD5: 96e79218965eb72c92a549dd5a330112)
+-- 确保admin和visitor账户存在且密码使用Argon2加密
+-- admin密码: 123456
+-- visitor密码: hello
 
 -- 更新或插入admin账户
 INSERT OR REPLACE INTO users (id, username, password, role)
 VALUES (
     (SELECT id FROM users WHERE username = 'admin'),
     'admin',
-    'e10adc3949ba59abbe56e057f20f883e',
+    '$argon2id$v=19$m=16384,t=2,p=1$PR7R68i1IaECQu3O5b6meg$YwySH08w432Za4Igj+zNcAaJZ2D1Qs5UgfROIXb/+u4',
     'admin'
     );
 
@@ -35,6 +35,6 @@ INSERT OR REPLACE INTO users (id, username, password, role)
 VALUES (
     (SELECT id FROM users WHERE username = 'visitor'),
     'visitor',
-    '96e79218965eb72c92a549dd5a330112',
+    '$argon2id$v=19$m=16384,t=2,p=1$6yZI0SIgjFCjqjChnnPYRQ$KYy5FZmZnMxCGjGVWWzd6DB8g8DczIUrOlANXaFnyts',
     'visitor'
     );

@@ -5,7 +5,7 @@ FROM eclipse-temurin:17-jre-alpine
 WORKDIR /app
 
 # 将 JAR 文件复制到工作目录
-COPY target/STdrive-0.1.jar app.jar
+COPY target/tgDrive-0.1.0.jar app.jar
 
 # 暴露端口（根据你的应用端口）
 EXPOSE 8085

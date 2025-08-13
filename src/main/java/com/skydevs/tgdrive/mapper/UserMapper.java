@@ -57,7 +57,7 @@ public interface UserMapper {
      * 插入新用户
      * @param user 用户信息
      */
-    @Insert("INSERT INTO users (username, password, role, email, reserved_1, reserved_2, reserved_3) VALUES (#{username}, #{password}, #{role}, #{email}, #{reserved1}, #{reserved2}, #{reserved3})")
+    @Insert("INSERT INTO users (username, password, role, email, last_login_time) VALUES (#{username}, #{password}, #{role}, #{email}, #{lastLoginTime})")
     @Options(useGeneratedKeys = true, keyProperty = "id")
     void insertUser(User user);
 
@@ -80,6 +80,6 @@ public interface UserMapper {
      * @param userId 用户ID
      * @param lastLoginTime 最后登录时间
      */
-    @Update("UPDATE users SET reserved_1 = #{lastLoginTime} WHERE id = #{userId}")
+    @Update("UPDATE users SET last_login_time = #{lastLoginTime} WHERE id = #{userId}")
     void updateLastLoginTime(Long userId, String lastLoginTime);
 }
