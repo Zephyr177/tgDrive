@@ -82,6 +82,10 @@ public class FileStorageServiceImpl implements FileStorageService {
 
                 // 使用FileStorageService上传文件
                 String fileID = uploadFile(inputStream, filename, size);
+                
+                // 无论大小，上传流程成功后发送完成消息
+                uploadProgressWebSocketHandler.sendUploadComplete(filename);
+
                 downloadUrl = prefix + "/d/" + fileID;
 
                 // 保存文件信息到数据库

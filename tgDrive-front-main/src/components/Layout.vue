@@ -7,7 +7,6 @@
           <el-icon class="logo-icon"><Cloudy /></el-icon>
           <div class="logo-text">
             <span class="main-title">TG-Drive</span>
-            <span class="sub-title">Stanley_Legend</span>
           </div>
         </div>
         <div class="actions">
@@ -368,13 +367,6 @@ const handleLogout = () => {
   animation: gradientMove 4s linear infinite;
 }
 
-.sub-title {
-  font-size: 12px;
-  font-weight: 400;
-  color: var(--el-text-color-regular);
-  margin-top: -2px;
-}
-
 @keyframes gradientMove {
   0% {
     background-position: 0% 50%;
@@ -563,10 +555,6 @@ const handleLogout = () => {
     white-space: nowrap;
   }
 
-  .sub-title {
-    display: none;
-  }
-
   .actions {
     gap: 4px;
     flex-wrap: nowrap;
@@ -612,10 +600,6 @@ const handleLogout = () => {
   .main-title {
     font-size: 18px;
     white-space: nowrap;
-  }
-
-  .sub-title {
-    font-size: 10px;
   }
 
   .actions {
@@ -702,10 +686,6 @@ const handleLogout = () => {
 
   .main-title {
     font-size: 18px;
-  }
-
-  .sub-title {
-    font-size: 10px;
   }
   
   .actions {
