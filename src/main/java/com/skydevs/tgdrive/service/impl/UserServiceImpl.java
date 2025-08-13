@@ -13,8 +13,8 @@ import com.skydevs.tgdrive.mapper.UserMapper;
 import com.skydevs.tgdrive.service.UserService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-import org.springframework.util.DigestUtils;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -25,6 +25,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class UserServiceImpl implements UserService {
     private final UserMapper userMapper;
+    private final PasswordEncoder passwordEncoder;
 
     /**
      * 根据用户名返回用户
@@ -70,8 +71,7 @@ public class UserServiceImpl implements UserService {
             throw new UserNotFoundException();
         }
 
-        String password = DigestUtils.md5DigestAsHex(authRequest.getPassword().getBytes());
-        if (!password.equals(user.getPassword())) {
+        if (!passwordEncoder.matches(authRequest.getPassword(), user.getPassword())) {
             throw new PasswordErrorException();
         }
 
@@ -92,13 +92,12 @@ public class UserServiceImpl implements UserService {
         }
 
         // 检查旧密码是否相符
-        String password = DigestUtils.md5DigestAsHex(changePasswordRequest.getOldPassword().getBytes());
-        if (!password.equals(user.getPassword())) {
+        if (!passwordEncoder.matches(changePasswordRequest.getOldPassword(), user.getPassword())) {
             throw new PasswordErrorException("原密码错误");
         }
 
         // 更新密码
-        String newPassword = DigestUtils.md5DigestAsHex(changePasswordRequest.getNewPassword().getBytes());
+        String newPassword = passwordEncoder.encode(changePasswordRequest.getNewPassword());
         userMapper.updatePassword(id, newPassword);
     }
 
@@ -132,7 +131,7 @@ public class UserServiceImpl implements UserService {
         }
 
         // 创建新用户
-        String encryptedPassword = DigestUtils.md5DigestAsHex(registerRequest.getPassword().getBytes());
+        String encryptedPassword = passwordEncoder.encode(registerRequest.getPassword());
         User newUser = User.builder()
                 .username(registerRequest.getUsername())
                 .password(encryptedPassword)
@@ -160,7 +159,7 @@ public class UserServiceImpl implements UserService {
         }
 
         // 加密新密码
-        String newPassword = DigestUtils.md5DigestAsHex(adminChangePasswordRequest.getNewPassword().getBytes());
+        String newPassword = passwordEncoder.encode(adminChangePasswordRequest.getNewPassword());
         
         // 更新密码
         userMapper.updatePassword(user.getId(), newPassword);
