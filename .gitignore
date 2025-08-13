@@ -34,6 +34,8 @@ build/
 .vscode/
 *.json
 *.db
+tgDrive-front-main/auto-imports.d.ts
+tgDrive-front-main/components.d.ts
 
 ### logs ###
 logs
