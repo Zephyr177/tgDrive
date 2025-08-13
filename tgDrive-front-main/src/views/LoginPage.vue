@@ -6,7 +6,7 @@
         <h2 class="login-title">欢迎回来</h2>
         <p class="login-subtitle">您可以使用访客账户登录</p>
         <div class="account-info">
-          <p><strong>访客账户:</strong> visitor / 111111</p>
+          <p><strong>访客账户:</strong> visitor / hello</p>
         </div>
       </div>
 

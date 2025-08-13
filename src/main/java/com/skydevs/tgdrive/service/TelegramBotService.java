@@ -1,15 +1,31 @@
 package com.skydevs.tgdrive.service;
 
+import com.pengrad.telegrambot.TelegramBot;
 import com.pengrad.telegrambot.model.File;
-import com.pengrad.telegrambot.model.Message;
-
-import java.io.InputStream;
 
 /**
  * Telegram Bot服务接口
  * 专门处理与Telegram Bot API相关的操作
  */
 public interface TelegramBotService {
+
+    /**
+     * Description:
+     * 获取bot
+     * @author SkyDev
+     * @date 2025-08-01 17:24:28
+     * @return bot
+     */
+    TelegramBot getBot();
+
+    /**
+     * Description:
+     * 获取chatId
+     * @author SkyDev
+     * @date 2025-08-12 14:00:00
+     * @return chatId
+     */
+    String getChatId();
 
     /**
      * 初始化Bot配置
@@ -21,22 +37,6 @@ public interface TelegramBotService {
      * @return 自定义URL
      */
     String getCustomUrl();
-
-    /**
-     * 发送文档到Telegram
-     * @param fileData 文件数据
-     * @param filename 文件名
-     * @return 消息对象
-     */
-    Message sendDocument(byte[] fileData, String filename);
-
-    /**
-     * 发送文档到Telegram
-     * @param inputStream 文件输入流
-     * @param filename 文件名
-     * @return 消息对象
-     */
-    Message sendDocument(InputStream inputStream, String filename);
 
     /**
      * 根据文件ID获取文件信息
@@ -58,12 +58,6 @@ public interface TelegramBotService {
      * @return 是否发送成功
      */
     boolean sendMessage(String message);
-
-    /**
-     * 删除消息
-     * @param messageId 消息ID
-     */
-    void deleteMessage(String messageId);
 
     /**
      * 检查Bot是否已初始化

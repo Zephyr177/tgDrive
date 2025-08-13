@@ -4,7 +4,10 @@ import cn.hutool.crypto.digest.DigestUtil;
 import com.alibaba.fastjson.JSON;
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
+import com.pengrad.telegrambot.TelegramBot;
 import com.pengrad.telegrambot.model.Message;
+import com.pengrad.telegrambot.request.SendDocument;
+import com.pengrad.telegrambot.response.SendResponse;
 import com.skydevs.tgdrive.dto.UploadFile;
 import com.skydevs.tgdrive.entity.BigFileInfo;
 import com.skydevs.tgdrive.entity.FileInfo;
@@ -26,6 +29,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.BufferedInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
@@ -52,10 +56,10 @@ public class FileStorageServiceImpl implements FileStorageService {
 
     @Autowired
     private TelegramBotService telegramBotService;
-    
+
     @Autowired
     private UploadProgressWebSocketHandler uploadProgressWebSocketHandler;
-    
+
     @Autowired
     @Qualifier("uploadTaskExecutor")
     private ThreadPoolTaskExecutor uploadTaskExecutor;
@@ -78,6 +82,10 @@ public class FileStorageServiceImpl implements FileStorageService {
 
                 // 使用FileStorageService上传文件
                 String fileID = uploadFile(inputStream, filename, size);
+                
+                // 无论大小，上传流程成功后发送完成消息
+                uploadProgressWebSocketHandler.sendUploadComplete(filename);
+
                 downloadUrl = prefix + "/d/" + fileID;
 
                 // 保存文件信息到数据库
@@ -129,20 +137,20 @@ public class FileStorageServiceImpl implements FileStorageService {
         try {
             // 发送单文件上传进度
             uploadProgressWebSocketHandler.sendUploadProgress(filename, 0, 0, 1);
-            
+
             // 小于10MB的GIF会被TG转换为MP4，对文件后缀进行处理
             String uploadFilename = filename;
             if (filename != null && filename.endsWith(".gif")) {
                 uploadFilename = filename.substring(0, filename.lastIndexOf(".gif"));
             }
-            
-            Message message = telegramBotService.sendDocument(inputStream, uploadFilename);
+
+            Message message = sendDocument(inputStream, uploadFilename);
             String fileID = StringUtil.extractFileId(message);
-            
+
             // 发送上传完成进度
             uploadProgressWebSocketHandler.sendUploadProgress(filename, 100, 1, 1);
             uploadProgressWebSocketHandler.sendUploadComplete(filename);
-            
+
             log.info("小文件上传成功，File ID：{}， 文件名：{}", fileID, filename);
             return fileID;
         } catch (Exception e) {
@@ -158,7 +166,7 @@ public class FileStorageServiceImpl implements FileStorageService {
     private List<String> sendFileStreamInChunks(InputStream inputStream, String filename) {
         List<CompletableFuture<String>> futures = new ArrayList<>();
         Semaphore semaphore = new Semaphore(PERMITS);
-        
+
         final AtomicInteger totalChunks = new AtomicInteger(0);
         final AtomicInteger completedChunks = new AtomicInteger(0);
 
@@ -181,12 +189,12 @@ public class FileStorageServiceImpl implements FileStorageService {
                 if (offset == 0) {
                     break;
                 }
-                
+
                 byte[] chunkData = Arrays.copyOf(buffer, offset);
                 allChunks.add(chunkData);
                 partIndex++;
             }
-            
+
             totalChunks.set(allChunks.size());
             log.info("文件 {} 将被分为 {} 个分块上传", filename, totalChunks.get());
 
@@ -195,22 +203,22 @@ public class FileStorageServiceImpl implements FileStorageService {
                 final int chunkIndex = i;
                 final byte[] chunkData = allChunks.get(i);
                 final String partName = filename + "_part" + chunkIndex;
-                
+
                 semaphore.acquire();
 
                 CompletableFuture<String> future = CompletableFuture.supplyAsync(() -> {
                     try {
-                        Message message = telegramBotService.sendDocument(chunkData, partName);
+                        Message message = sendDocument(chunkData, partName);
                         String fileID = StringUtil.extractFileId(message);
-                        
+
                         if (fileID != null) {
                             log.info("分块上传成功，File ID：{}， 文件名：{}", fileID, partName);
-                            
+
                             // 更新进度
                             int completed = completedChunks.incrementAndGet();
                             double percentage = (double) completed / totalChunks.get() * 100;
                             uploadProgressWebSocketHandler.sendUploadProgress(filename, percentage, completed, totalChunks.get());
-                            
+
                             return fileID;
                         } else {
                             throw new RuntimeException("分块 " + partName + " 上传失败：无法获取文件ID");
@@ -261,7 +269,7 @@ public class FileStorageServiceImpl implements FileStorageService {
         String hashString = DigestUtil.sha256Hex(originalFileName);
         Path tempFile = tempDir.resolve(hashString + ".record.json");
         Files.createFile(tempFile);
-        
+
         try {
             String jsonString = JSON.toJSONString(record, true);
             Files.write(Paths.get(tempFile.toUri()), jsonString.getBytes());
@@ -272,7 +280,7 @@ public class FileStorageServiceImpl implements FileStorageService {
 
         // 上传记录文件到 Telegram
         byte[] fileBytes = Files.readAllBytes(tempFile);
-        Message message = telegramBotService.sendDocument(fileBytes, tempFile.getFileName().toString());
+        Message message = sendDocument(fileBytes, tempFile.getFileName().toString());
         String recordFileId = StringUtil.extractFileId(message);
 
         log.info("记录文件上传成功，File ID: {}", recordFileId);
@@ -340,6 +348,73 @@ public class FileStorageServiceImpl implements FileStorageService {
             fileMapper.updateIsPublic(fileId, isPublic);
         } else {
             throw new InsufficientPermissionException("无权限更新此文件");
+        }
+    }
+
+    /**
+     * Description:
+     * 调用bot上传文件
+     * @author SkyDev
+     * @date 2025-08-01 17:36:24
+     * @param fileData 文件
+     * @param filename 文件名
+     * @return 上传文件的返回信息
+     */
+    private Message sendDocument(byte[] fileData, String filename) {
+        TelegramBot bot = telegramBotService.getBot();
+        String chatId = telegramBotService.getChatId();
+        int retryCount = 3;
+        int baseDelay = 1000;
+
+        for (int i = 0; i < retryCount; i++) {
+            try {
+                SendDocument sendDocument = new SendDocument(chatId, fileData).fileName(filename);
+                SendResponse response = bot.execute(sendDocument);
+
+                if (response != null && response.isOk() && response.message() != null) {
+                    return response.message();
+                }
+
+                int exponentialDelay = baseDelay * (int)Math.pow(2, i);
+                log.warn("发送文档失败，正在准备第{}次重试，等待{}毫秒", (i+1), exponentialDelay);
+                Thread.sleep(exponentialDelay);
+            } catch (Exception e) {
+                if (i == retryCount - 1) {
+                    log.error("发送文档失败，已达到最大重试次数: {}", e.getMessage());
+                    throw new RuntimeException("发送文档失败，已达到最大重试次数", e);
+                }
+                try {
+                    Thread.sleep((long) baseDelay * (int)Math.pow(2, i));
+                } catch (InterruptedException ie) {
+                    Thread.currentThread().interrupt();
+                    throw new RuntimeException("重试等待被中断", ie);
+                }
+            }
+        }
+
+        throw new RuntimeException("发送文档失败，已达到最大重试次数");
+    }
+
+    /**
+     * Description:
+     * 流上传
+     * @author SkyDev
+     * @date 2025-08-01 17:37:53
+     * @param inputStream 文件流
+     * @param filename 文件名
+     * @return 上传文件的返回信息
+     */
+    private Message sendDocument(InputStream inputStream, String filename) {
+        try (ByteArrayOutputStream buffer = new ByteArrayOutputStream()) {
+            byte[] data = new byte[8192];
+            int byteRead;
+            while ((byteRead = inputStream.read(data)) != -1) {
+                buffer.write(data, 0, byteRead);
+            }
+            return sendDocument(buffer.toByteArray(), filename);
+        } catch (IOException e) {
+            log.error("读取输入流失败: {}", e.getMessage());
+            throw new RuntimeException("读取输入流失败", e);
         }
     }
 }

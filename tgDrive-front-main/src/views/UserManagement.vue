@@ -67,7 +67,7 @@
         </el-table-column>
         <el-table-column prop="email" label="邮箱" min-width="200" show-overflow-tooltip>
           <template #default="scope">
-            {{ scope.row.role === 'admin' ? (scope.row.email || 'admin@tgdrive.cfd') : scope.row.email }}
+            {{ scope.row.role === 'admin' ? (scope.row.email || '') : scope.row.email }}
           </template>
         </el-table-column>
         <el-table-column prop="role" label="角色" width="100" align="center">
@@ -75,9 +75,9 @@
             <el-tag :type="getRoleTagType(scope.row.role)">{{ getRoleText(scope.row.role) }}</el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="reserved1" label="最后上线时间" width="180" align="center">
+        <el-table-column prop="lastLoginTime" label="最后上线时间" width="180" align="center">
           <template #default="scope">
-            {{ scope.row.reserved1 || '从未登录' }}
+            {{ scope.row.lastLoginTime || '从未登录' }}
           </template>
         </el-table-column>
         <el-table-column label="操作" width="280" align="center" fixed="right">
@@ -134,7 +134,7 @@
                   <el-tag :type="getRoleTagType(user.role)" size="small">{{ getRoleText(user.role) }}</el-tag>
                 </div>
                 <div class="user-email">{{ user.email }}</div>
-                <div class="user-login-time">最后上线: {{ user.reserved1 || '从未登录' }}</div>
+                <div class="user-login-time">最后上线: {{ user.lastLoginTime || '从未登录' }}</div>
               </div>
             </div>
             <div class="user-actions">
@@ -265,9 +265,7 @@ interface UserItem {
   username: string
   email: string
   role: string
-  reserved1?: string
-  reserved2?: string
-  reserved3?: string
+  lastLoginTime: string
 }
 
 interface ChangePasswordForm {

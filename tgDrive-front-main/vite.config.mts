@@ -71,6 +71,10 @@ export default defineConfig({
         changeOrigin: true,
         secure: false,
       },
+      '/ws': {
+        target: 'ws://localhost:8085',
+        ws: true,
+      },
     },
     port: 3000,
   },
