@@ -33,7 +33,7 @@
           <el-avatar 
             class="user-avatar" 
             :size="32"
-            src="/favicon.ico"
+            src="/public/favicon.ico"
           />
           <template #dropdown>
             <el-dropdown-menu>

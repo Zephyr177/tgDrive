@@ -53,7 +53,7 @@
             <div class="user-info">
               <el-avatar
                 :size="32"
-                src="/110871356.jpg"
+                src="/public/favicon.ico"
                 style="cursor: pointer;"
               />
               <div class="user-details">
