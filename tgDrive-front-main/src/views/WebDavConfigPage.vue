@@ -31,15 +31,6 @@
           <div class="form-tip">启用后可通过WebDAV协议访问文件</div>
         </el-form-item>
 
-        <el-form-item label="访问路径" prop="pathPrefix">
-          <el-input
-            v-model="configForm.pathPrefix"
-            placeholder="/webdav"
-            :disabled="!configForm.enabled"
-          />
-          <div class="form-tip">WebDAV服务的访问路径前缀</div>
-        </el-form-item>
-
         <el-form-item label="需要认证" prop="requireAuth">
           <el-switch
             v-model="configForm.requireAuth"
@@ -47,7 +38,7 @@
             inactive-text="不需要"
             :disabled="!configForm.enabled"
           />
-          <div class="form-tip">是否需要用户名密码认证</div>
+          <div class="form-tip">是否需要用户名密码认证（正在施工中...）</div>
         </el-form-item>
 
         <!-- 权限设置 -->
@@ -74,18 +65,6 @@
           功能设置
         </el-divider>
 
-        <el-form-item label="最大上传大小" prop="maxUploadSize">
-          <el-input-number
-            v-model="configForm.maxUploadSize"
-            :min="1"
-            :max="1024"
-            :step="10"
-            :disabled="!configForm.enabled"
-          />
-          <span class="unit">MB</span>
-          <div class="form-tip">单个文件的最大上传大小限制</div>
-        </el-form-item>
-
         <el-form-item label="允许创建目录" prop="allowMkdir">
           <el-switch
             v-model="configForm.allowMkdir"
@@ -93,6 +72,7 @@
             inactive-text="禁止"
             :disabled="!configForm.enabled"
           />
+          <div class="form-tip">（正在施工中...）</div>
         </el-form-item>
 
         <el-form-item label="允许删除文件" prop="allowDelete">
@@ -102,6 +82,7 @@
             inactive-text="禁止"
             :disabled="!configForm.enabled"
           />
+          <div class="form-tip">（正在施工中...）</div>
         </el-form-item>
 
         <el-form-item label="允许移动文件" prop="allowMove">
@@ -111,6 +92,7 @@
             inactive-text="禁止"
             :disabled="!configForm.enabled"
           />
+          <div class="form-tip">（正在施工中...）</div>
         </el-form-item>
 
         <el-form-item label="允许复制文件" prop="allowCopy">
@@ -120,6 +102,7 @@
             inactive-text="禁止"
             :disabled="!configForm.enabled"
           />
+          <div class="form-tip">（正在施工中...）</div>
         </el-form-item>
 
         <el-form-item label="配置描述" prop="description">
@@ -229,10 +212,8 @@ const resetting = ref(false)
 // 配置表单数据
 const configForm = reactive({
   enabled: true,
-  pathPrefix: '/webdav',
   requireAuth: true,
   allowedRoles: 'admin',
-  maxUploadSize: 100,
   allowMkdir: true,
   allowDelete: true,
   allowMove: true,
@@ -242,16 +223,8 @@ const configForm = reactive({
 
 // 表单验证规则
 const configRules: FormRules = {
-  pathPrefix: [
-    { required: true, message: '请输入访问路径', trigger: 'blur' },
-    { pattern: /^\/.*/, message: '路径必须以/开头', trigger: 'blur' }
-  ],
   allowedRoles: [
     { required: true, message: '请选择允许的角色', trigger: 'change' }
-  ],
-  maxUploadSize: [
-    { required: true, message: '请输入最大上传大小', trigger: 'blur' },
-    { type: 'number', min: 1, max: 1024, message: '大小必须在1-1024MB之间', trigger: 'blur' }
   ]
 }
 
@@ -259,7 +232,7 @@ const configRules: FormRules = {
 const webdavUrl = computed(() => {
   const protocol = window.location.protocol
   const host = window.location.host
-  return `${protocol}//${host}${configForm.pathPrefix}`
+  return `${protocol}//${host}/webdav`
 })
 
 // 加载配置
