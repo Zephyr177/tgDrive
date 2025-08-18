@@ -22,7 +22,10 @@ public class ConfigController {
     private final TelegramBotService telegramBotService;
 
     /**
+     * Description:
      * 获取配置文件信息
+     * @author SkyDev
+     * @date 2025-08-15 14:21:54
      * @param name 配置文件名
      * @return ConfigForm
      */
@@ -39,7 +42,10 @@ public class ConfigController {
     }
 
     /**
+     * Description:
      * 获取所有配置文件
+     * @author SkyDev
+     * @date 2025-08-15 14:22:02
      * @return 配置文件列表
      */
     @SaCheckRole("admin")
@@ -50,7 +56,10 @@ public class ConfigController {
     }
 
     /**
+     * Description:
      * 提交配置文件
+     * @author SkyDev
+     * @date 2025-08-15 14:22:09
      * @param configForm 配置信息
      * @return 成功消息
      */
@@ -81,6 +90,8 @@ public class ConfigController {
     /**
      * Description:
      * 加载配置
+     * @author SkyDev
+     * @date 2025-08-15 14:22:26
      * @param filename 配置文件名
      * @return 成功消息
      */

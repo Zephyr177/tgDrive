@@ -5,6 +5,7 @@ import com.skydevs.tgdrive.dto.*;
 import com.skydevs.tgdrive.entity.User;
 import com.skydevs.tgdrive.result.Result;
 import com.skydevs.tgdrive.service.UserService;
+import com.skydevs.tgdrive.service.SettingService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
@@ -17,6 +18,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class UserController {
     private final UserService userService;
+    private final SettingService settingService;
 
     /**
      * 用户登入
@@ -69,6 +71,11 @@ public class UserController {
      */
     @PostMapping("/register")
     public Result<UserLogin> register(@RequestBody RegisterRequest registerRequest) {
+        // 检查是否允许注册
+        if (!settingService.isRegistrationAllowed()) {
+            return Result.error("注册功能已关闭");
+        }
+
         try {
             // 注册用户
             User user = userService.register(registerRequest);
@@ -98,6 +105,7 @@ public class UserController {
      * @param adminChangePasswordRequest 管理员修改密码请求
      * @return 密码修改成败消息
      */
+    //TODO: 改为注解检查管理员权限
     @PostMapping("admin/change-password")
     public Result<String> adminChangePassword(@RequestBody AdminChangePasswordRequest adminChangePasswordRequest) {
         // 验证当前用户是否为管理员
