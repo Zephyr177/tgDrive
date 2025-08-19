@@ -1,11 +1,37 @@
-HELP.md
+# =========================================
+#  根目录 .gitignore (主规则书) 喵~
+# =========================================
+
+# 1. 项目级文件
+# =========================================
+# 环境变量文件
 .env
+
+# 日志文件夹
+logs/
+
+# 本地数据库文件
+/db/tgdrive.db
+/db/tgdrive_backup.db
+
+
+# 2. 后端 (Maven) 专属
+# =========================================
+# 编译产物
 target/
+# Maven Wrapper 特例
 !.mvn/wrapper/maven-wrapper.jar
 !**/src/main/**/target/
-!**/src/test/**/target/
 
-### STS ###
+
+# 3. 全局 IDE 和编辑器配置
+# =========================================
+# 因为开发者可能会用一个IDE打开整个项目，所以这些放在根目录最合适！
+.idea/
+*.iml
+*.iws
+*.ipr
+.vscode/
 .apt_generated
 .classpath
 .factorypath
@@ -13,29 +39,3 @@ target/
 .settings
 .springBeans
 .sts4-cache
-
-### IntelliJ IDEA ###
-.idea
-*.iws
-*.iml
-*.ipr
-
-### NetBeans ###
-/nbproject/private/
-/nbbuild/
-/dist/
-/nbdist/
-/.nb-gradle/
-build/
-!**/src/main/**/build/
-!**/src/test/**/build/
-
-### VS Code ###
-.vscode/
-*.json
-*.db
-tgDrive-front-main/auto-imports.d.ts
-tgDrive-front-main/components.d.ts
-
-### logs ###
-logs
