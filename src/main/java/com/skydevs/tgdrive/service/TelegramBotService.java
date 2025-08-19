@@ -30,7 +30,7 @@ public interface TelegramBotService {
     /**
      * 初始化Bot配置
      */
-    void initializeBot(String filename);
+    void initializeBot(String name);
 
     /**
      * 获取自定义URL

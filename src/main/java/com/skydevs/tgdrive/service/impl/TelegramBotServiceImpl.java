@@ -40,10 +40,10 @@ public class TelegramBotServiceImpl implements TelegramBotService {
     }
 
     @Override
-    public void initializeBot(String filename) {
-        ConfigForm config = configService.get(filename);
+    public void initializeBot(String name) {
+        ConfigForm config = configService.get(name);
         if (config == null) {
-            log.error("配置文件不存在");
+            log.error("配置不存在");
             throw new ConfigFileNotFoundException();
         }
         this.botToken = config.getToken();

@@ -25,7 +25,7 @@ public class ConfigController {
 
     /**
      * Description:
-     * 获取配置文件信息
+     * 获取配置信息
      * @author SkyDev
      * @date 2025-08-15 14:21:54
      * @param name 配置文件名
@@ -33,7 +33,7 @@ public class ConfigController {
      */
     @SaCheckRole("admin")
     @GetMapping()
-    public Result<ConfigForm> getConfig(@NotBlank(message = "配置文件名不能为空") @RequestParam String name) {
+    public Result<ConfigForm> getConfig(@NotBlank(message = "配置名不能为空") @RequestParam String name) {
         ConfigForm config = configService.get(name);
         if (config == null) {
             log.error("配置获取失败，请检查文件名是否错误");
@@ -45,7 +45,7 @@ public class ConfigController {
 
     /**
      * Description:
-     * 获取所有配置文件
+     * 获取所有配置
      * @author SkyDev
      * @date 2025-08-15 14:22:02
      * @return 配置文件列表
@@ -59,7 +59,7 @@ public class ConfigController {
 
     /**
      * Description:
-     * 提交配置文件
+     * 提交配置
      * @author SkyDev
      * @date 2025-08-15 14:22:09
      * @param configForm 配置信息
@@ -75,7 +75,7 @@ public class ConfigController {
 
     /**
      * Description:
-     * 删除配置文件
+     * 删除配置
      * @author SkyDev
      * @date 2025-07-30 16:46:09
      * @param name 配置文件名
@@ -94,14 +94,13 @@ public class ConfigController {
      * 加载配置
      * @author SkyDev
      * @date 2025-08-15 14:22:26
-     * @param filename 配置文件名
+     * @param name 配置文件名
      * @return 成功消息
      */
-    //TODO: 规范变量命名
     @SaCheckRole("admin")
-    @GetMapping("/{filename}")
-    public Result<String> loadConfig(@NotBlank(message = "配置文件名不能为空") @PathVariable("filename") String filename) {
-        telegramBotService.initializeBot(filename);
+    @GetMapping("/{name}")
+    public Result<String> loadConfig(@NotBlank(message = "配置名不能为空") @PathVariable("name") String name) {
+        telegramBotService.initializeBot(name);
         log.info("加载配置成功");
         return Result.success("配置加载成功");
     }

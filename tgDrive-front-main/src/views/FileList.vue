@@ -254,7 +254,7 @@ const toggleSelection = (file: FileItem) => {
 const fetchFileList = async () => {
   loading.value = true;
   try {
-    let url = `/fileList?page=${currentPage.value}&size=${pageSize.value}`;
+    let url = `/file-list?page=${currentPage.value}&size=${pageSize.value}`;
     if (searchQuery.value) {
       url += `&keyword=${encodeURIComponent(searchQuery.value)}`;
     }

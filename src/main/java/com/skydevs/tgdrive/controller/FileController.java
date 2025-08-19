@@ -46,7 +46,7 @@ public class FileController {
      * @param size 每页数量
      * @return 分页结果
      */
-    @GetMapping("/fileList")
+    @GetMapping("/file-list")
     public Result<PageResult> getFileList(@RequestParam int page, @RequestParam int size, @RequestParam(required = false) String keyword, @RequestParam(required = false) Long userId) {
         Long currentUserId = null;
         String role = "visitor";
