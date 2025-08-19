@@ -1,6 +1,7 @@
 #TODO: 支持arm架构
-# 设置基础镜像 - 改为 Java 17
-FROM eclipse-temurin:17-jre-alpine
+#TODO: CI/CD
+# 设置基础镜像 - 改为标准版 Java 17
+FROM eclipse-temurin:17-jre
 
 # 设置工作目录为 /app
 WORKDIR /app
