@@ -56,7 +56,7 @@ FROM eclipse-temurin:17-jre
 WORKDIR /app
 
 # 从“主食厨房”里，把最终封装好的、带有前后端所有内容的便当盒(JAR包)拿过来！
-COPY --from=backend-builder /app/target/tgDrive-0.1.0.jar app.jar
+COPY --from=backend-builder /app/target/app.jar app.jar
 
 # 暴露端口
 EXPOSE 8085
