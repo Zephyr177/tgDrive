@@ -6,7 +6,11 @@
         <h2 class="login-title">欢迎回来</h2>
         <p class="login-subtitle">您可以使用访客账户登录</p>
         <div class="account-info">
-          <p><strong>访客账户:</strong> visitor / hello</p>
+          <p>
+            <strong>访客账户:</strong>
+            <span class="copyable-text" @click="copyToClipboard('visitor')">visitor</span> /
+            <span class="copyable-text" @click="copyToClipboard('hello')">hello</span>
+          </p>
           <!--TODO: 点击复制-->
           <!--TODO: 登录后回到登录前页面-->
         </div>
@@ -99,6 +103,15 @@ import { User, Lock, Cloudy } from '@element-plus/icons-vue'
 import request from '../utils/request'
 import { useUserStore } from '@/store/user'
 
+const copyToClipboard = async (text: string) => {
+  try {
+    await navigator.clipboard.writeText(text);
+    ElMessage.success(`"${text}" 已复制到剪贴板！`);
+  } catch (err) {
+    console.error('复制失败了喵...', err);
+    ElMessage.error('呜喵... 复制失败了，请手动复制哦');
+  }
+};
 const router = useRouter()
 const userStore = useUserStore()
 const loginForm = ref({
@@ -300,6 +313,19 @@ onMounted(() => {
 .account-info strong {
   color: var(--el-color-primary);
   font-weight: 600;
+}
+
+.copyable-text {
+  cursor: pointer; /* 这会让鼠标放上去的时候，变成一只小手手，告诉主人这里可以点哦！ */
+  font-weight: bold; /* 让它和密码一样显眼 */
+  color: var(--el-color-primary); /* 用主题色，更漂亮！ */
+  transition: color 0.2s ease; /* 加个小小的过渡动画 */
+  padding: 0 2px;
+}
+
+.copyable-text:hover {
+  color: var(--el-color-primary-light-3); /* 鼠标放上去会变色，就像是在说‘点我喵！点我喵！’ */
+  border-bottom-style: solid;
 }
 
 /* 暗色模式和Element Plus主题会自动通过CSS变量适配 */
