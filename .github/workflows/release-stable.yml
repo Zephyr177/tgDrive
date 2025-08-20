@@ -12,6 +12,9 @@ jobs:
     # 在最新的Ubuntu机器人上运行
     runs-on: ubuntu-latest
 
+    permissions:
+      contents: write # 授予对仓库内容的写入权限！
+
     steps:
       # 第一步：把你的代码菜谱拿到机器人厨房里
       - name: Checkout code
@@ -65,7 +68,7 @@ jobs:
       # 第七步：在“珍宝展览馆”里创建展台
       - name: Create Release
         id: create_release
-        uses: actions/create-release@v1
+        uses: actions/create-release@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
