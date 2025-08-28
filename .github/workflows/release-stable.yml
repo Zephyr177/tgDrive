@@ -67,16 +67,10 @@ jobs:
       # ============================================
       # 第七步：在“珍宝展览馆”里创建展台
       - name: Create Release
-        id: create_release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        uses: ncipollo/release-action@v1
         with:
-          tag_name: ${{ github.ref }}
-          release_name: Release ${{ github.ref }}
-          generate_release_notes: true
-          draft: false
-          prerelease: false
+            token: ${{ secrets.GITHUB_TOKEN }}
+            generateReleaseNotes: true
 
       # 第八步：把我们做好的“豪华罐头”放到展台上！
       - name: Upload Release Asset (JAR)
