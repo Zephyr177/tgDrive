@@ -11,8 +11,7 @@
 logs/
 
 # 本地数据库文件
-/db/tgdrive.db
-/db/tgdrive_backup.db
+/db/
 
 
 # 2. 后端 (Maven) 专属
